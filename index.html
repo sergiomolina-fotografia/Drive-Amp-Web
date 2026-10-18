@@ -2,7 +2,9 @@
 <html lang="es">
 <head>
 <meta charset="utf-8"/>
-<meta content="width=device-width, initial-scale=1" name="viewport"/>
+<meta content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" name="viewport"/>
+<meta name="theme-color" content="#000000">
+<meta name="mobile-web-app-capable" content="yes">
 <title>Drive-Amp</title>
 <!-- Metadatos y etiquetas para compartir en redes sociales y vistas previas -->
 <meta property="og:title" content="Drive-Amp - Reproductor Winamp para Google Drive">
@@ -21,6 +23,9 @@
 <link rel="icon" type="image/png" sizes="32x32" href="img/favicon-32.png">
 <link rel="icon" type="image/png" sizes="192x192" href="img/icon-192.png">
 <link rel="apple-touch-icon" href="img/apple-touch-icon.png">
+<!-- Fuente VT323: antes NO se cargaba en esta página (el @import estaba en base.css, que no se enlaza) -->
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
 <style>
   :root {
     --chrome: #2b3140;
@@ -689,12 +694,121 @@
     ol { height: 200px; }
     li.t .x { opacity: 1; }
   }
+
+  /* ============================================================
+     COLUMNA IZQUIERDA (necesario en apilado y en horizontal)
+     ============================================================ */
+  .col-left { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+  .col-left > .win { flex: 0 0 auto; }
+
+  /* ============================================================
+     CAPA ESTÉREO / HEAD UNIT — solo pantallas anchas y apaisadas
+     ============================================================ */
+  @media (orientation: landscape) and (min-width: 760px) and (min-height: 380px) {
+
+    html, body { height: 100%; overflow: hidden; overscroll-behavior: none; }
+    body {
+      display: block; padding: 0; margin: 0;
+      background: #05070a;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none; -webkit-user-select: none;
+    }
+    button, input, .win { touch-action: manipulation; }
+
+    #app {
+      position: fixed; top: 0; left: 0;
+      width: calc(100vw / var(--hu-scale, 1));
+      height: calc(100vh / var(--hu-scale, 1));
+      height: calc(100dvh / var(--hu-scale, 1));
+      transform: scale(var(--hu-scale, 1));
+      transform-origin: top left;
+      max-width: none;
+      display: flex; flex-direction: row; align-items: stretch;
+      gap: 6px; padding: 6px; box-sizing: border-box;
+    }
+
+    .col-left {
+      flex: 0 0 470px; min-width: 0;
+      overflow-y: auto; overflow-x: hidden;
+      scrollbar-width: thin; scrollbar-color: #4a5268 #0b0d12;
+    }
+
+    #plwin { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; }
+    #plwin .body { flex: 1 1 auto; min-height: 0; }
+    #plwin ol { height: auto; flex: 1 1 auto; min-height: 0; }
+    #plwin .foot, #plwin .hint, #plwin .msg { flex: 0 0 auto; }
+
+    .title { font-size: 15px; padding: 7px 8px; letter-spacing: .12em; }
+    .win-btn { width: 26px; height: 24px; font-size: 16px; line-height: 22px; }
+    .lcd { padding: 12px; gap: 10px; }
+    .body { padding: 10px; gap: 10px; }
+    .time { font-size: 62px; }
+    .timebox { min-width: 190px; gap: 10px; }
+    .state { font-size: 26px; width: 30px; }
+    .vizbox, canvas { height: 62px; }
+    .viz-btn { width: 30px; height: 26px; font-size: 17px; opacity: .8; }
+    .marq span { font-size: 27px; }
+    .info { font-size: 20px; }
+
+    .tb { width: 56px; height: 48px; font-size: 22px; }
+    .tr { gap: 6px; }
+    .pill { height: 42px; padding: 0 14px; font-size: 14px; }
+    .drive-toggle-btn, .drive-search-btn, .cfg-btn { height: 42px; padding: 0 14px; font-size: 14px; }
+    .wide { height: 44px; padding: 0 16px; font-size: 15px; }
+    .btn-search, .btn-cfg-test { height: 40px; font-size: 15px; padding: 0 14px; }
+    .btn-add-result, .btn-open-drive { height: 38px; padding: 0 12px; font-size: 15px; }
+
+    input[type=range] { height: 24px; }
+    input[type=range]::-webkit-slider-thumb { width: 34px; height: 24px; }
+    .vol { font-size: 15px; gap: 12px; }
+    .vol span { min-width: 52px; }
+
+    .drive-input-box { font-size: 19px; min-height: 92px; }
+    .drive-search-input, .cfg-input, .cfg-select { height: 40px; font-size: 19px; }
+    .drive-status, .msg { font-size: 16px; line-height: 1.4; }
+    .cfg-desc, .hint { font-size: 15px; line-height: 1.4; }
+
+    li.t .m { font-size: 21px; padding: 10px 6px; }
+    li.t .x { opacity: 1; width: 36px; height: 36px; font-size: 17px; }
+    li.empty { font-size: 22px; padding: 40px 16px; }
+    .m .n { min-width: 40px; }
+    .m .tag { font-size: 14px; padding: 2px 5px; }
+    .m .d { min-width: 70px; }
+
+    .search-results-box { max-height: 240px; }
+    .search-item, .search-item-title { font-size: 18px; }
+    .search-item { padding: 8px; }
+    .fav-item { font-size: 19px; padding: 7px 6px; }
+    .fav-item .fc { font-size: 15px; }
+    .fav-list { max-height: 300px; }
+    .total { font-size: 19px; }
+
+    /* el auto no tiene hover: feedback por :active */
+    li.t:hover, .search-item:hover { background: transparent; }
+    li.t:active, li.t.act { background: #0b3a7a; color: #fff; }
+    .search-item:active { background: #0d1e38; }
+    .fav-item:hover { background: #0a1a2e; }
+  }
 </style>
+<script>
+/* Escala el bloque completo para que entre en cualquier resolución de estéreo. */
+(() => {
+  const DESIGN_H = 576;
+  const fit = () => {
+    const s = Math.min(window.innerHeight / DESIGN_H, window.innerWidth / 900);
+    document.documentElement.style.setProperty("--hu-scale", String(Math.max(0.5, s)));
+  };
+  fit();
+  addEventListener("resize", fit);
+  addEventListener("orientationchange", fit);
+})();
+</script>
 </head>
 <body>
 <div class="stack" id="app">
 <audio id="audio" preload="metadata"></audio>
 <audio id="audioNet" preload="metadata"></audio>
+<div class="col-left">
 <!-- VENTANA PRINCIPAL DEL REPRODUCTOR -->
 <section aria-label="Reproductor" class="win">
 <div class="title">
@@ -850,6 +964,7 @@ Los navegadores no pueden hablar los protocolos <b>smb://</b> (Samba) ni <b>UPnP
 </div>
 </div>
 </section>
+</div><!-- /col-left -->
 <!-- VENTANA DE LISTA DE REPRODUCCIÓN -->
 <section aria-label="Lista de reproducción" class="win" id="plwin">
 <div class="title">
@@ -1734,6 +1849,16 @@ Los navegadores no pueden hablar los protocolos <b>smb://</b> (Samba) ni <b>UPnP
   let simPhase = 0;
   const NB = 32; // bandas de espectro
   const spec = new Array(NB).fill(0);
+
+  // Factor de escala del modo estéreo: el canvas se dibuja en píxeles reales, no en los del layout.
+  let huScale = 1;
+  const readHuScale = () => {
+    const v = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--hu-scale"));
+    huScale = isFinite(v) && v > 0 ? v : 1;
+  };
+  readHuScale();
+  addEventListener("resize", readHuScale);
+
   function nextViz(e) {
     if (e) e.stopPropagation();
     vizMode = (vizMode + 1) % VIZ_MODES.length;
@@ -1746,7 +1871,7 @@ Los navegadores no pueden hablar los protocolos <b>smb://</b> (Samba) ni <b>UPnP
 
   function draw() {
     requestAnimationFrame(draw);
-    const dpr = window.devicePixelRatio || 1;
+    const dpr = (window.devicePixelRatio || 1) * huScale;
     const w = Math.round(cv.clientWidth * dpr), h = Math.round(cv.clientHeight * dpr);
     if (cv.width !== w || cv.height !== h) { cv.width = w; cv.height = h; }
     g.clearRect(0, 0, w, h);
