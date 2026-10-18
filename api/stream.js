@@ -1,94 +1,48 @@
-// api/stream.js
-// Proxy de audio streaming para Google Drive con soporte de Range y CORS
+// api/stream.js — Edge Runtime (sin techo de 60s para el streaming)
+export const config = { runtime: 'edge' };
 
-export default async function handler(req, res) {
-  // Manejo de preflight CORS
-  if (req.method === 'OPTIONS') {
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Range, Content-Type');
-    return res.status(200).end();
-  }
+const CORS = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'GET, OPTIONS',
+  'Access-Control-Allow-Headers': 'Range, Content-Type',
+  'Access-Control-Expose-Headers': 'Content-Range, Content-Length, Accept-Ranges',
+};
 
-  const { id } = req.query;
-  if (!id || typeof id !== 'string') {
-    return res.status(400).json({ error: 'Falta el parámetro ?id de Google Drive' });
-  }
+export default async function handler(req) {
+  if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers: CORS });
 
-  // URL de descarga directa de Google Drive
-  const driveUrl = `https://drive.usercontent.google.com/download?id=${encodeURIComponent(id)}&export=download&authuser=0&confirm=t`;
+  const id = new URL(req.url).searchParams.get('id');
+  if (!id) return json({ error: 'Falta el parámetro ?id de Google Drive' }, 400);
 
   try {
-    const fetchHeaders = {};
-    if (req.headers.range) {
-      fetchHeaders['Range'] = req.headers.range;
+    let up = await fetch(
+      `https://drive.usercontent.google.com/download?id=${encodeURIComponent(id)}&export=download&authuser=0&confirm=t`,
+      { redirect: 'follow' }
+    );
+    if (!up.ok) {
+      up = await fetch(
+        `https://drive.google.com/uc?export=download&id=${encodeURIComponent(id)}&confirm=t`,
+        { redirect: 'follow' }
+      );
     }
+    if (!up.ok) return json({ error: 'No se pudo obtener el audio. Verificá que el archivo sea público.' }, 502);
 
-    const driveRes = await fetch(driveUrl, {
-      headers: fetchHeaders,
-      redirect: 'follow',
-    });
+    const headers = new Headers(CORS);
+    headers.set('Content-Type', up.headers.get('content-type') || 'audio/mpeg');
+    headers.set('Accept-Ranges', 'bytes');
+    headers.set('Cache-Control', 'public, max-age=86400');
+    const len = up.headers.get('content-length');
+    if (len) headers.set('Content-Length', len);
 
-    if (!driveRes.ok && driveRes.status !== 206) {
-      // Reintento con endpoint alternativo uc
-      const altUrl = `https://drive.google.com/uc?export=download&id=${encodeURIComponent(id)}&confirm=t`;
-      const altRes = await fetch(altUrl, { headers: fetchHeaders, redirect: 'follow' });
-      if (!altRes.ok && altRes.status !== 206) {
-        return res.status(driveRes.status).json({
-          error: 'No se pudo obtener el audio de Google Drive. Verifica que el archivo sea público ("Cualquier persona con el enlace").'
-        });
-      }
-      return pipeStream(altRes, req, res);
-    }
-
-    return pipeStream(driveRes, req, res);
-  } catch (err) {
-    console.error('Error en stream.js:', err);
-    return res.status(500).json({ error: err.message });
+    return new Response(up.body, { status: 200, headers });
+  } catch (e) {
+    return json({ error: e.message }, 500);
   }
 }
 
-function pipeStream(sourceRes, req, res) {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Accept-Ranges', 'bytes');
-  res.setHeader('Cache-Control', 'public, max-age=86400');
-
-  const contentType = sourceRes.headers.get('content-type') || 'audio/mpeg';
-  res.setHeader('Content-Type', contentType);
-
-  const contentLength = sourceRes.headers.get('content-length');
-  if (contentLength) res.setHeader('Content-Length', contentLength);
-
-  const contentRange = sourceRes.headers.get('content-range');
-  if (contentRange) {
-    res.setHeader('Content-Range', contentRange);
-    res.status(206);
-  } else {
-    res.status(sourceRes.status || 200);
-  }
-
-  // Streaming del flujo de datos en chunks
-  if (sourceRes.body) {
-    const reader = sourceRes.body.getReader();
-    const pump = async () => {
-      try {
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) {
-            res.end();
-            break;
-          }
-          if (!res.write(value)) {
-            await new Promise(r => res.once('drain', r));
-          }
-        }
-      } catch (err) {
-        console.error('Error streaming chunk:', err);
-        res.end();
-      }
-    };
-    pump();
-  } else {
-    res.end();
-  }
+function json(obj, status) {
+  return new Response(JSON.stringify(obj), {
+    status,
+    headers: { ...CORS, 'Content-Type': 'application/json; charset=utf-8' },
+  });
 }
