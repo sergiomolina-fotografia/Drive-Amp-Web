@@ -1,8 +1,11 @@
 {
   "version": 2,
+  "rewrites": [
+    { "source": "/_api/drive/:path*", "destination": "/api/:path*" }
+  ],
   "headers": [
     {
-      "source": "/api/(.*)",
+      "source": "/(.*)",
       "headers": [
         { "key": "Access-Control-Allow-Origin", "value": "*" },
         { "key": "Access-Control-Allow-Methods", "value": "GET, POST, OPTIONS" },
@@ -10,10 +13,9 @@
         { "key": "Access-Control-Expose-Headers", "value": "Content-Range, Content-Length, Accept-Ranges" }
       ]
     }
-  ]
-}
-{
+  ],
   "functions": {
-    "api/*.js": { "maxDuration": 60 }
+    "api/resolve.js": { "maxDuration": 60 },
+    "api/search.js": { "maxDuration": 30 }
   }
 }
