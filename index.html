@@ -1273,8 +1273,8 @@ Los navegadores no pueden hablar los protocolos <b>smb://</b> (Samba) ni <b>UPnP
   $("configTitleBar").onclick = (e) => { if (e.target.tagName !== "BUTTON") toggleConfigPanel(); };
   $("configMinBtn").onclick = (e) => { e.stopPropagation(); toggleConfigPanel(); };
 
-  /* ---------- Servidor de Drive (Floot) ---------- */
-  const DEFAULT_API = "https://driveamp.floot.app";
+  /* ---------- Servidor de Drive (Vercel) ---------- */
+  const DEFAULT_API = "https://drive-amp-three.vercel.app";
 
   function getApiBase() {
     const v = String(store.get("serverUrl", DEFAULT_API) || "").trim().replace(/\/+$/, "");
